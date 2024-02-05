@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // A HTTP servers function is to allow the user to receive http requests and send http responses
 // It does this by using some underlying communication protocoll e.g. TCP.
@@ -48,13 +50,10 @@ type routeController struct {
 
 type Server struct {
 	port             Port
-	routeControllers []struct {
-		route      Route
-		controller Controller
-	}
-	addController func(route Route, controller Controller)
-	listen        func(port Port)
-	handleRequest func(res Request) Response
+	routeControllers []routeController
+	addController    func(route Route, controller Controller)
+	listen           func(port Port)
+	handleRequest    func(res Request) Response
 }
 
 func initServer(config Config) Server {
@@ -70,7 +69,14 @@ func initServer(config Config) Server {
 	}
 
 	server.handleRequest = func(req Request) Response {
-		return "response"
+		index := sliceIndexOf(server.routeControllers, func(rc routeController) bool {
+			return rc.route.url == req.url
+		})
+		if index == -1 {
+			return "404"
+		}
+		rc := server.routeControllers[index]
+		return rc.controller(req, createBaseResponse(req))
 	}
 
 	server.listen = func(port Port) {
@@ -82,7 +88,6 @@ func initServer(config Config) Server {
 			fmt.Println(server.handleRequest(Request{url: requestUrl, httpMethod: GET}))
 		}
 	}
-
 	return server
 }
 
@@ -96,4 +101,19 @@ func main() {
 		},
 	)
 	server.listen(3333)
+}
+
+// Returns index of the first element of the array for which f returns true.
+// If there is no element for which f returns true, -1 will be returned.
+func sliceIndexOf[E any](slice []E, f func(E) bool) int {
+	for i, v := range slice {
+		if f(v) {
+			return i
+		}
+	}
+	return -1
+}
+
+func createBaseResponse(req Request) Response {
+	return "response"
 }
