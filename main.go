@@ -93,13 +93,14 @@ func initServer(config Config) Server {
 
 func main() {
 	server := initServer(Config{})
+
 	server.addController(
 		Route{url: "/", method: GET},
 		func(req Request, res Response) Response {
-			res = "response"
+			res = "smh"
 			return res
-		},
-	)
+		})
+
 	server.listen(3333)
 }
 
