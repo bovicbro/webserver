@@ -3,10 +3,9 @@ package server
 import (
 	"fmt"
 	. "webserver/http"
+	. "webserver/server/controller"
 	"webserver/utility"
 )
-
-type Controller = func(req Request, res Response) Response
 
 type Config struct {
 }
