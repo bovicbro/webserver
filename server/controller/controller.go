@@ -1,5 +1,5 @@
 package controller
 
-import . "webserver/http"
+import . "webserver/server/http"
 
 type Controller = func(req Request, res Response) Response

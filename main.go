@@ -1,8 +1,8 @@
 package main
 
 import (
-	"webserver/http"
 	"webserver/server"
+	"webserver/server/http"
 )
 
 func main() {
