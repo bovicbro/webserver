@@ -59,6 +59,7 @@ func handleRequest(conn net.Conn) {
 	fmt.Println(string(buffer))
 
 	time := time.Now()
-	responseStr := fmt.Sprintf("Your message was received at: %v", time)
+	responseStr := fmt.Sprintf("Your message was received at: %v\n", time)
 	conn.Write([]byte(responseStr))
+	conn.Close()
 }
