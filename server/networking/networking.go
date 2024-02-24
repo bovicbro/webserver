@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"time"
-	"webserver/server/http"
 )
 
 // This should be set by config
@@ -22,14 +21,12 @@ type Port int
 type ListenerType = func(port Port)
 
 func Listen(port Port) {
-	var requestUrl http.URL
 	for {
-		fmt.Print("Make request: ")
-		fmt.Scan(&requestUrl)
+		initListener()
 	}
 }
 
-func init() {
+func initListener() {
 	listen, err := net.Listen(TYPE, HOST+":"+PORT)
 
 	if err != nil {

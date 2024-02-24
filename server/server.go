@@ -42,7 +42,3 @@ func InitServer(config Config) Server {
 
 	return server
 }
-
-func createBaseResponse(req Request) Response {
-	return "response"
-}
