@@ -5,7 +5,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
+	"webserver/server/http"
+	"webserver/server/router"
 )
 
 // This should be set by config
@@ -18,15 +19,15 @@ const (
 
 type Port int
 
-type ListenerType = func(port Port)
+type ListenerType = func(port Port, rcs *[]router.ControlledRoutes)
 
-func Listen(port Port) {
+func Listen(port Port, rcs *[]router.ControlledRoutes) {
 	for {
-		initListener()
+		initListener(rcs)
 	}
 }
 
-func initListener() {
+func initListener(rcs *[]router.ControlledRoutes) {
 	listen, err := net.Listen(TYPE, HOST+":"+PORT)
 
 	if err != nil {
@@ -41,11 +42,11 @@ func initListener() {
 			log.Fatal(err)
 			os.Exit(1)
 		}
-		go handleRequest(conn)
+		go handleRequest(conn, rcs)
 	}
 }
 
-func handleRequest(conn net.Conn) {
+func handleRequest(conn net.Conn, rcs *[]router.ControlledRoutes) {
 	buffer := make([]byte, 1024)
 	_, err := conn.Read(buffer)
 
@@ -55,8 +56,10 @@ func handleRequest(conn net.Conn) {
 
 	fmt.Println(string(buffer))
 
-	time := time.Now()
-	responseStr := fmt.Sprintf("Your message was received at: %v\n", time)
-	conn.Write([]byte(responseStr))
+	// Parse incoming reuqest
+	req := http.ParseRequest(string(buffer))
+	res := router.Router(req, *rcs)
+
+	conn.Write([]byte(res + "\n"))
 	conn.Close()
 }

@@ -19,24 +19,21 @@ type Port int
 
 type Server struct {
 	port             Port
-	routeControllers []router.ControlledRoutes
+	RouteControllers []router.ControlledRoutes
 	AddController    func(route Route, controller Controller)
 	Listen           networking.ListenerType
-	router           router.RouterType
 }
 
 func InitServer(config Config) Server {
 	var server Server
 
 	server.AddController = func(route Route, controller Controller) {
-		server.routeControllers = router.AddController(
+		server.RouteControllers = router.AddController(
 			route,
 			controller,
-			server.routeControllers,
+			server.RouteControllers,
 		)
 	}
-
-	server.router = router.Router
 
 	server.Listen = networking.Listen
 

@@ -32,3 +32,7 @@ type Route struct {
 	Url    URL
 	Method METHOD
 }
+
+func ParseRequest(reqRaw string) Request {
+	return Request{}
+}

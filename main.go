@@ -15,5 +15,6 @@ func main() {
 			return res
 		})
 
-	server.Listen(3333)
+	// End user should not have to pass rouce controllers here. Lets fix later
+	server.Listen(3333, &server.RouteControllers)
 }
