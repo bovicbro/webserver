@@ -69,6 +69,7 @@ type Route struct {
 }
 
 func ParseRequest(reqRaw string) Request {
+	// This parser is shady af. Needs to handle all cases.
 	var req = Request{}
 	rows := strings.Split(reqRaw, "\n")
 	method := strings.Split(rows[0], " ")[0]
