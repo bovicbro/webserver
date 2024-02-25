@@ -24,7 +24,7 @@ type Server struct {
 	Listen           networking.ListenerType
 }
 
-func InitServer(config Config) Server {
+func InitServer(config Config) *Server {
 	var server Server
 
 	server.AddController = func(route Route, controller Controller) {
@@ -37,5 +37,5 @@ func InitServer(config Config) Server {
 
 	server.Listen = networking.Listen
 
-	return server
+	return &server
 }

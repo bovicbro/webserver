@@ -1,7 +1,6 @@
 package networking
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -19,15 +18,15 @@ const (
 
 type Port int
 
-type ListenerType = func(port Port, rcs *[]router.ControlledRoutes)
+type ListenerType = func(port Port, rcs []router.ControlledRoutes)
 
-func Listen(port Port, rcs *[]router.ControlledRoutes) {
+func Listen(port Port, rcs []router.ControlledRoutes) {
 	for {
 		initListener(rcs)
 	}
 }
 
-func initListener(rcs *[]router.ControlledRoutes) {
+func initListener(rcs []router.ControlledRoutes) {
 	listen, err := net.Listen(TYPE, HOST+":"+PORT)
 
 	if err != nil {
@@ -46,7 +45,7 @@ func initListener(rcs *[]router.ControlledRoutes) {
 	}
 }
 
-func handleRequest(conn net.Conn, rcs *[]router.ControlledRoutes) {
+func handleRequest(conn net.Conn, rcs []router.ControlledRoutes) {
 	buffer := make([]byte, 1024)
 	_, err := conn.Read(buffer)
 
@@ -54,12 +53,9 @@ func handleRequest(conn net.Conn, rcs *[]router.ControlledRoutes) {
 		log.Fatal(err)
 	}
 
-	fmt.Println(string(buffer))
-
-	// Parse incoming reuqest
 	req := http.ParseRequest(string(buffer))
-	res := router.Router(req, *rcs)
+	res := router.Router(req, rcs)
 
-	conn.Write([]byte(res + "\n"))
+	conn.Write([]byte(res.Serialize() + "\n"))
 	conn.Close()
 }

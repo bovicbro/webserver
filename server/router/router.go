@@ -2,6 +2,7 @@ package router
 
 import (
 	. "webserver/server/controller"
+	"webserver/server/http"
 	. "webserver/server/http"
 	"webserver/utility"
 )
@@ -18,10 +19,10 @@ func Router(req Request, rcs []ControlledRoutes) Response {
 		return rc.route.Url == req.Url
 	})
 	if index == -1 {
-		return "404"
+		return http.Response{Body: "404 is good\n"}
 	}
 	rc := rcs[index]
-	return rc.controller(req, createBaseResponse(req))
+	return rc.controller(req, http.CreateBaseResponse(req))
 }
 
 type AddControllerType = func(route Route, controller Controller, rcs []ControlledRoutes)
@@ -34,8 +35,4 @@ func AddController(route Route, controller Controller, rcs []ControlledRoutes) [
 			controller: controller,
 		})
 	return rcs
-}
-
-func createBaseResponse(req Request) Response {
-	return "response"
 }
