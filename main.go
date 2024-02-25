@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"webserver/server"
 	"webserver/server/http"
 )
@@ -11,7 +12,12 @@ func main() {
 	server.AddController(
 		http.Route{Url: "/", Method: http.GET},
 		func(req http.Request, res http.Response) http.Response {
-			res = http.Response{Body: "smth", Status: 200}
+			content, err := os.ReadFile("./index.html")
+			if err != nil {
+				res = http.Response{Body: "Hello, World!", Status: 200}
+			} else {
+				res = http.Response{Body: string(content), Status: 200}
+			}
 			return res
 		})
 
