@@ -18,28 +18,39 @@ const (
 	DELET METHOD = "DELETE"
 )
 
-const HTTPVERSION = "HTTP/1.1"
-
-type STATUS int
+type CONTENT string
 
 const (
-	OK        STATUS = 200
-	NOT_FOUND STATUS = 404
+	HTML CONTENT = "text/html"
+	CSS  CONTENT = "text/css"
+	JSON CONTENT = "application/json"
+)
+
+const HTTPVERSION = "HTTP/1.1"
+
+type STATUS string
+
+const (
+	OK        STATUS = "200 OK"
+	NOT_FOUND STATUS = "404 Not Found"
 )
 
 type Response struct {
 	Body    string
 	Status  STATUS
 	Headers []Header
+	Content CONTENT
 }
 
 func (res Response) Serialize() string {
-	resString := fmt.Sprintf(`HTTP/1.1 200 OK 
+	resString := fmt.Sprintf(`HTTP/1.1 %s 
 Content-length: %d 
-Content-Type: text/html; charset=utf-8
+Content-Type: %s; charset=utf-8
 
 %s`,
+		res.Status,
 		len(res.Body),
+		res.Content,
 		res.Body,
 	)
 	return resString
