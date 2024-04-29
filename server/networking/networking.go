@@ -53,8 +53,13 @@ func handleRequest(conn net.Conn, rcs []router.ControlledRoutes) {
 		log.Fatal(err)
 	}
 
-	req := http.ParseRequest(string(buffer))
-	res := router.Router(req, rcs)
+	req, err := http.ParseRequest(string(buffer))
+	var res http.Response
+	if err != nil {
+		res = http.Response{Status: http.MALFORMED, Body: "400 Bad Request"}
+	} else {
+		res = router.Router(req, rcs)
+	}
 
 	conn.Write([]byte(res.Serialize() + "\n"))
 	conn.Close()

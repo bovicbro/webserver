@@ -1,8 +1,8 @@
 package server
 
 import (
-	. "webserver/server/controller"
-	. "webserver/server/http"
+	"webserver/server/controller"
+	"webserver/server/http"
 	"webserver/server/networking"
 	"webserver/server/router"
 )
@@ -11,8 +11,8 @@ type Config struct {
 }
 
 type routeController struct {
-	route      Route
-	controller Controller
+	route      http.Route
+	controller controller.Controller
 }
 
 type Port int
@@ -20,14 +20,14 @@ type Port int
 type Server struct {
 	port             Port
 	RouteControllers []router.ControlledRoutes
-	AddController    func(route Route, controller Controller)
+	AddController    func(route http.Route, controller controller.Controller)
 	Listen           networking.ListenerType
 }
 
 func InitServer(config Config) *Server {
 	var server Server
 
-	server.AddController = func(route Route, controller Controller) {
+	server.AddController = func(route http.Route, controller controller.Controller) {
 		server.RouteControllers = router.AddController(
 			route,
 			controller,

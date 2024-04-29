@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -33,6 +34,7 @@ type STATUS string
 const (
 	OK        STATUS = "200 OK"
 	NOT_FOUND STATUS = "404 Not Found"
+	MALFORMED STATUS = "400 Bad Request"
 )
 
 type Response struct {
@@ -68,17 +70,23 @@ type Route struct {
 	Method METHOD
 }
 
-func ParseRequest(reqRaw string) Request {
-	// This parser is shady af. Needs to handle all cases.
+func ParseRequest(reqRaw string) (Request, error) {
 	var req = Request{}
 	rows := strings.Split(reqRaw, "\n")
-	method := strings.Split(rows[0], " ")[0]
-	url := strings.Split(rows[0], " ")[1]
-	version := strings.Split(rows[0], " ")[2]
+	if len(rows) < 1 {
+		return req, errors.New("Malformed request")
+	}
+	firstRow := strings.Split(rows[0], " ")
+	if len(firstRow) < 3 {
+		return req, errors.New("Malformed request")
+	}
+	method := firstRow[0]
+	url := firstRow[1]
+	version := firstRow[2]
 	req.HttpMethod = METHOD(method)
 	req.Url = URL(url)
 	req.Version = version
-	return req
+	return req, nil
 }
 
 func CreateBaseResponse(req Request) Response {

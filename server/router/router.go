@@ -19,7 +19,7 @@ func Router(req Request, rcs []ControlledRoutes) Response {
 		return rc.route.Url == req.Url
 	})
 	if index == -1 {
-		return http.Response{Body: "404 Not found", Status: http.NOT_FOUND}
+		return http.Response{Body: "404 Not found", Status: http.NOT_FOUND, Content: "text/html"}
 	}
 	rc := rcs[index]
 	return rc.controller(req, http.CreateBaseResponse(req))
