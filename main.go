@@ -13,6 +13,7 @@ func main() {
 		http.Route{Url: "/", Method: http.GET},
 		func(req http.Request, res http.Response) http.Response {
 			content, err := os.ReadFile("./static/index.html")
+
 			if err != nil {
 				res = http.Response{Status: http.NOT_FOUND}
 			} else {
