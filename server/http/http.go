@@ -1,3 +1,4 @@
+// Package that handles http
 package http
 
 import (

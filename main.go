@@ -25,7 +25,7 @@ func main() {
 	server.AddController(
 		http.Route{Url: "/about", Method: http.GET},
 		func(req http.Request, res http.Response) http.Response {
-			content, err := os.ReadFile("./static/index.html")
+			content, err := os.ReadFile("./static/about.html")
 			if err != nil {
 				res = http.Response{Status: http.NOT_FOUND}
 			} else {
