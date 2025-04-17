@@ -56,7 +56,7 @@ func handleRequest(conn net.Conn, rcs []router.ControlledRoutes) {
 	req, err := http.ParseRequest(string(buffer))
 	var res http.Response
 	if err != nil {
-		res = http.Response{Status: http.MALFORMED, Body: "400 Bad Request"}
+		res = http.Response{Status: http.BAD_REQUEST, Body: "400 Bad Request"}
 	} else {
 		res = router.Router(req, rcs)
 	}
