@@ -46,7 +46,5 @@ func main() {
 			return res
 		})
 
-	// End user should not have to pass rouce controllers here. Lets fix later
-	// The port is not wired up yet so should change that as well.
-	server.Listen(0000, server.RouteControllers)
+	server.Listen("8000", server.RouteControllers)
 }

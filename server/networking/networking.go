@@ -12,22 +12,21 @@ import (
 // tcp could be hardcoded, unless implementing http3
 const (
 	HOST = "localhost"
-	PORT = "8080"
 	TYPE = "tcp"
 )
 
 type Port int
 
-type ListenerType = func(port Port, rcs []router.ControlledRoutes)
+type ListenerType = func(port string, rcs []router.ControlledRoutes)
 
-func Listen(port Port, rcs []router.ControlledRoutes) {
+func Listen(port string, rcs []router.ControlledRoutes) {
 	for {
-		initListener(rcs)
+		initListener(port, rcs)
 	}
 }
 
-func initListener(rcs []router.ControlledRoutes) {
-	listen, err := net.Listen(TYPE, HOST+":"+PORT)
+func initListener(port string, rcs []router.ControlledRoutes) {
+	listen, err := net.Listen(TYPE, HOST+":"+port)
 
 	if err != nil {
 		os.Exit(1)
