@@ -16,7 +16,7 @@ type RouterType = func(req Request, rcs []ControlledRoutes) Response
 
 func Router(req Request, rcs []ControlledRoutes) Response {
 	index := utility.SliceIndexOf(rcs, func(rc ControlledRoutes) bool {
-		return rc.route.Url == req.Url
+		return rc.route.Url == req.Url && rc.route.Method == req.HttpMethod
 	})
 	if index == -1 {
 		return http.Response{Body: "404 Not found", Status: http.NOT_FOUND, Content: "text/html"}

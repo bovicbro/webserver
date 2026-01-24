@@ -163,9 +163,6 @@ func TestRouterWithMultipleRoutes(t *testing.T) {
 
 // TestRouterWithDifferentMethods tests Router with different HTTP methods
 func TestRouterWithDifferentMethods(t *testing.T) {
-	// Note: Current implementation matches only by URL, not by HTTP method
-	// This test documents that behavior
-
 	// Arrange
 	getController := func(req Request, res Response) Response {
 		return Response{Body: "GET response", Status: OK, Content: PLAIN}
@@ -187,14 +184,18 @@ func TestRouterWithDifferentMethods(t *testing.T) {
 	postRes := Router(postReq, rcs)
 
 	// Assert
-	// Current implementation matches only by URL, not by method
-	// Both should match the first route that has the URL
+	// Router now matches by both URL and METHOD
 	if getRes.Body != "GET response" {
 		t.Errorf("Expected GET response, got %s", getRes.Body)
 	}
-	if postRes.Body != "GET response" {
-		// Router matches by URL only, so both GET and POST will return GET response
-		t.Logf("Router matches by URL only, POST request matched GET controller: %s", postRes.Body)
+	if postRes.Body != "POST response" {
+		t.Errorf("Expected POST response, got %s", postRes.Body)
+	}
+	if getRes.Status != OK {
+		t.Errorf("Expected GET status OK, got %v", getRes.Status)
+	}
+	if postRes.Status != CREATED {
+		t.Errorf("Expected POST status CREATED, got %v", postRes.Status)
 	}
 }
 
@@ -315,5 +316,122 @@ func TestControlledRoutesStructure(t *testing.T) {
 	}
 	if cr.route.Method != expectedRoute.Method {
 		t.Errorf("Expected method %v, got %v", expectedRoute.Method, cr.route.Method)
+	}
+}
+
+// TestRouterMethodMismatch tests Router when method doesn't match
+func TestRouterMethodMismatch(t *testing.T) {
+	// Arrange
+	getController := func(req Request, res Response) Response {
+		return Response{Body: "GET only", Status: OK, Content: PLAIN}
+	}
+
+	rcs := []ControlledRoutes{
+		{route: Route{Url: "/resource", Method: GET}, controller: getController},
+	}
+
+	// Act - Try POST on a GET-only route
+	postReq := Request{Url: "/resource", HttpMethod: POST, Version: "HTTP/1.1"}
+	res := Router(postReq, rcs)
+
+	// Assert - Should return 404 because method doesn't match
+	if res.Status != NOT_FOUND {
+		t.Errorf("Expected NOT_FOUND status, got %v", res.Status)
+	}
+	if res.Body != "404 Not found" {
+		t.Errorf("Expected 404 body, got %s", res.Body)
+	}
+}
+
+// TestRouterSameURLDifferentMethods tests Router with same URL different methods
+func TestRouterSameURLDifferentMethods(t *testing.T) {
+	// Arrange
+	getController := func(req Request, res Response) Response {
+		return Response{Body: "GET", Status: OK, Content: JSON}
+	}
+	postController := func(req Request, res Response) Response {
+		return Response{Body: "POST", Status: CREATED, Content: JSON}
+	}
+	putController := func(req Request, res Response) Response {
+		return Response{Body: "PUT", Status: OK, Content: JSON}
+	}
+	deleteController := func(req Request, res Response) Response {
+		return Response{Body: "DELETE", Status: OK, Content: JSON}
+	}
+
+	rcs := []ControlledRoutes{
+		{route: Route{Url: "/items", Method: GET}, controller: getController},
+		{route: Route{Url: "/items", Method: POST}, controller: postController},
+		{route: Route{Url: "/items", Method: PUT}, controller: putController},
+		{route: Route{Url: "/items", Method: DELETE}, controller: deleteController},
+	}
+
+	tests := []struct {
+		method       METHOD
+		expectedBody string
+		expectedCode STATUS
+	}{
+		{GET, "GET", OK},
+		{POST, "POST", CREATED},
+		{PUT, "PUT", OK},
+		{DELETE, "DELETE", OK},
+	}
+
+	for _, tt := range tests {
+		// Act
+		req := Request{Url: "/items", HttpMethod: tt.method, Version: "HTTP/1.1"}
+		res := Router(req, rcs)
+
+		// Assert
+		if res.Body != tt.expectedBody {
+			t.Errorf("Method %v: Expected body %s, got %s", tt.method, tt.expectedBody, res.Body)
+		}
+		if res.Status != tt.expectedCode {
+			t.Errorf("Method %v: Expected status %v, got %v", tt.method, tt.expectedCode, res.Status)
+		}
+	}
+}
+
+// TestRouterSpecificRouteSelection tests that exact route is selected
+func TestRouterSpecificRouteSelection(t *testing.T) {
+	// Arrange - Multiple routes with overlapping URLs and methods
+	controller1 := func(req Request, res Response) Response {
+		return Response{Body: "Root GET", Status: OK, Content: PLAIN}
+	}
+	controller2 := func(req Request, res Response) Response {
+		return Response{Body: "Root POST", Status: CREATED, Content: PLAIN}
+	}
+	controller3 := func(req Request, res Response) Response {
+		return Response{Body: "API GET", Status: OK, Content: JSON}
+	}
+
+	rcs := []ControlledRoutes{
+		{route: Route{Url: "/", Method: GET}, controller: controller1},
+		{route: Route{Url: "/", Method: POST}, controller: controller2},
+		{route: Route{Url: "/api", Method: GET}, controller: controller3},
+	}
+
+	tests := []struct {
+		name         string
+		url          URL
+		method       METHOD
+		expectedBody string
+	}{
+		{"Root GET", "/", GET, "Root GET"},
+		{"Root POST", "/", POST, "Root POST"},
+		{"API GET", "/api", GET, "API GET"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Act
+			req := Request{Url: tt.url, HttpMethod: tt.method, Version: "HTTP/1.1"}
+			res := Router(req, rcs)
+
+			// Assert
+			if res.Body != tt.expectedBody {
+				t.Errorf("Expected %s, got %s", tt.expectedBody, res.Body)
+			}
+		})
 	}
 }

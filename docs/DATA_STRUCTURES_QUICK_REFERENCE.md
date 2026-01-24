@@ -223,10 +223,12 @@ println(header.key)  // Error!
 cr := ControlledRoutes{...}
 route := cr.route  // Error!
 
-// ❌ Router matches by URL only, not method
-// Both routes will match if URL is same:
-Route{Url: "/api", Method: GET}
-Route{Url: "/api", Method: POST}  // Second one overrides first
+// ✓ Router matches by both URL and METHOD
+// Different routes can handle same URL with different methods:
+Route{Url: "/api", Method: GET}    // List endpoint
+Route{Url: "/api", Method: POST}   // Create endpoint
+Route{Url: "/api", Method: PUT}    // Update endpoint
+Route{Url: "/api", Method: DELETE} // Delete endpoint
 
 // ❌ Response with no Status or Content
 res := Response{Body: "data"}

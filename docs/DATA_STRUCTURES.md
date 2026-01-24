@@ -454,12 +454,42 @@ server.AddController(
 | Field | Type | Matching | Notes |
 |-------|------|----------|-------|
 | `Url` | `URL` | Exact match only | `"/about"` matches only exactly `"/about"` |
-| `Method` | `METHOD` | Defined but not used in router | Currently router matches by URL only |
+| `Method` | `METHOD` | Exact match (GET, POST, PUT, DELETE, etc.) | Router now matches both URL and METHOD |
+
+**Route Matching Behavior:**
+Router matches routes based on **both URL and HTTP METHOD** exactly. This allows you to define different handlers for the same URL with different HTTP methods.
+
+**Example with Multiple Methods:**
+```go
+// GET /api/users → Returns list of users
+server.AddController(
+    Route{Url: "/api/users", Method: GET},
+    getUsersController,
+)
+
+// POST /api/users → Creates new user
+server.AddController(
+    Route{Url: "/api/users", Method: POST},
+    createUserController,
+)
+
+// PUT /api/users → Updates user
+server.AddController(
+    Route{Url: "/api/users", Method: PUT},
+    updateUserController,
+)
+
+// DELETE /api/users → Deletes user
+server.AddController(
+    Route{Url: "/api/users", Method: DELETE},
+    deleteUserController,
+)
+```
 
 **Limitations:**
-- Router currently matches only by `Url`, ignoring `Method`
 - Routes like `/users/{id}` not supported (exact match only)
 - No wildcards or regex patterns
+- Dynamic URL parameters require separate implementation
 
 ---
 
