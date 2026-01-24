@@ -225,3 +225,76 @@ func TestServerRouteControllersType(t *testing.T) {
 		t.Errorf("Expected RouteControllers to have 1 element, got %d", len(server.RouteControllers))
 	}
 }
+
+// TestConfigWithPort tests Config struct with custom port
+func TestConfigWithPort(t *testing.T) {
+	// Arrange
+	config := Config{Port: 3000}
+
+	// Act
+	srv := InitServer(config)
+
+	// Assert
+	if srv.Port != 3000 {
+		t.Errorf("Expected port 3000, got %d", srv.Port)
+	}
+}
+
+// TestConfigDefaultPort tests default port when not specified
+func TestConfigDefaultPort(t *testing.T) {
+	// Arrange
+	config := Config{} // Port not specified (defaults to 0)
+
+	// Act
+	srv := InitServer(config)
+
+	// Assert
+	if srv.Port != 8000 {
+		t.Errorf("Expected default port 8000, got %d", srv.Port)
+	}
+}
+
+// TestServerPortFromConfig tests that server gets port from config
+func TestServerPortFromConfig(t *testing.T) {
+	testCases := []struct {
+		name       string
+		configPort Port
+		expected   Port
+	}{
+		{"zero defaults to 8000", 0, 8000},
+		{"custom port 3000", 3000, 3000},
+		{"custom port 5000", 5000, 5000},
+		{"custom port 9999", 9999, 9999},
+		{"alternative port 8080", 8080, 8080},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			config := Config{Port: tc.configPort}
+
+			// Act
+			srv := InitServer(config)
+
+			// Assert
+			if srv.Port != tc.expected {
+				t.Errorf("Expected port %d, got %d", tc.expected, srv.Port)
+			}
+		})
+	}
+}
+
+// TestServerExportedPort tests that Port field is exported
+func TestServerExportedPort(t *testing.T) {
+	// Arrange
+	config := Config{Port: 5000}
+	srv := InitServer(config)
+
+	// Act - Port should be accessible directly
+	port := srv.Port
+
+	// Assert
+	if port != 5000 {
+		t.Errorf("Expected to access port directly, got %d", port)
+	}
+}

@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	Port Port // Server port (default: 8000)
 }
 
 type routeController struct {
@@ -18,7 +19,7 @@ type routeController struct {
 type Port int
 
 type Server struct {
-	port             Port
+	Port             Port // Server port
 	RouteControllers []router.ControlledRoutes
 	AddController    func(
 		route http.Route,
@@ -28,6 +29,12 @@ type Server struct {
 
 func InitServer(config Config) *Server {
 	var server Server
+
+	// Set port from config, default to 8000
+	server.Port = config.Port
+	if server.Port == 0 {
+		server.Port = 8000
+	}
 
 	server.AddController = func(
 		route http.Route,
