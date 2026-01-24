@@ -17,7 +17,9 @@ const (
 
 type Port int
 
-type ListenerType = func(port string, rcs []router.ControlledRoutes)
+type ListenerType = func(
+	port string,
+	rcs []router.ControlledRoutes)
 
 func Listen(port string, rcs []router.ControlledRoutes) {
 	for {
