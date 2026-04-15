@@ -39,6 +39,18 @@ func main() {
 		})
 
 	webServer.AddController(
+		http.Route{Url: "/contributors", Method: http.GET},
+		func(req http.Request, res http.Response) http.Response {
+			content, err := os.ReadFile("./static/contributors.html")
+			if err != nil {
+				res = http.Response{Status: http.NOT_FOUND}
+			} else {
+				res = http.Response{Body: string(content), Status: http.OK}
+			}
+			return res
+		})
+
+	webServer.AddController(
 		http.Route{Url: "/styles.css", Method: http.GET},
 		func(req http.Request, res http.Response) http.Response {
 			content, err := os.ReadFile("./static/styles.css")
