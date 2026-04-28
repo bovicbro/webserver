@@ -1,66 +1,61 @@
 package main
 
 import (
-	"os"
+	"encoding/json"
 	"strconv"
 	"webserver/server"
+	"webserver/server/controller"
 	"webserver/server/http"
 )
 
 func main() {
-	// Initialize server with custom port (use 0 or omit for default 8000)
 	webServer := server.InitServer(server.Config{
 		Port: 8000,
 	})
 
+	// API: search with query params
 	webServer.AddController(
-		http.Route{Url: "/", Method: http.GET},
+		http.Route{Url: "/api/search", Method: http.GET},
 		func(req http.Request, res http.Response) http.Response {
-			content, err := os.ReadFile("./static/index.html")
-
-			if err != nil {
-				res = http.Response{Status: http.NOT_FOUND}
-			} else {
-				res = http.Response{Body: string(content), Status: http.OK}
+			query := req.Query["q"]
+			if query == "" {
+				query = "nothing"
 			}
-			return res
+			return http.Response{
+				Status:  http.OK,
+				Content: http.JSON,
+				Body:    `{"query":"` + query + `"}`,
+			}
 		})
 
+	// API: user by ID (path params)
 	webServer.AddController(
-		http.Route{Url: "/about", Method: http.GET},
+		http.Route{Url: "/api/users/:id", Method: http.GET},
 		func(req http.Request, res http.Response) http.Response {
-			content, err := os.ReadFile("./static/about.html")
-			if err != nil {
-				res = http.Response{Status: http.NOT_FOUND}
-			} else {
-				res = http.Response{Body: string(content), Status: http.OK}
+			userID := req.PathParams["id"]
+			body, _ := json.Marshal(map[string]string{"user_id": userID})
+			return http.Response{
+				Status:  http.OK,
+				Content: http.JSON,
+				Body:    string(body),
 			}
-			return res
 		})
 
+	// API: echo body
 	webServer.AddController(
-		http.Route{Url: "/contributors", Method: http.GET},
+		http.Route{Url: "/api/echo", Method: http.POST},
 		func(req http.Request, res http.Response) http.Response {
-			content, err := os.ReadFile("./static/contributors.html")
-			if err != nil {
-				res = http.Response{Status: http.NOT_FOUND}
-			} else {
-				res = http.Response{Body: string(content), Status: http.OK}
+			return http.Response{
+				Status:  http.OK,
+				Content: http.JSON,
+				Body:    `{"received":"` + req.Body + `"}`,
 			}
-			return res
 		})
 
+	// Static file serving (catch-all)
 	webServer.AddController(
-		http.Route{Url: "/styles.css", Method: http.GET},
-		func(req http.Request, res http.Response) http.Response {
-			content, err := os.ReadFile("./static/styles.css")
-			if err != nil {
-				res = http.Response{Status: http.NOT_FOUND}
-			} else {
-				res = http.Response{Body: string(content), Status: http.OK}
-			}
-			return res
-		})
+		http.Route{Url: "/*", Method: http.GET},
+		controller.Static("./static"))
 
 	webServer.Listen(strconv.Itoa(int(webServer.Port)), webServer.RouteControllers)
 }

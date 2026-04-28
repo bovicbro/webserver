@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"os"
 	"testing"
 	. "webserver/server/http"
 )
@@ -254,5 +255,83 @@ func TestControllerCanReadRequestMethod(t *testing.T) {
 	// Assert
 	if result.Body != "Method is DELETE" {
 		t.Errorf("Expected body with method, got %s", result.Body)
+	}
+}
+
+// TestDetectContentType tests content type detection from file extension
+func TestDetectContentType(t *testing.T) {
+	tests := []struct {
+		path     string
+		expected CONTENT
+	}{
+		{"index.html", HTML},
+		{"styles.css", CSS},
+		{"app.js", JAVASCRIPT},
+		{"data.json", JSON},
+		{"image.png", PNG},
+		{"unknown.xyz", PLAIN},
+	}
+
+	for _, tt := range tests {
+		got := detectContentType(tt.path)
+		if got != tt.expected {
+			t.Errorf("detectContentType(%s): expected %v, got %v", tt.path, tt.expected, got)
+		}
+	}
+}
+
+// TestStaticServesExistingFile tests Static controller serves a file
+func TestStaticServesExistingFile(t *testing.T) {
+	// Arrange
+	dir := t.TempDir()
+	os.WriteFile(dir+"/test.txt", []byte("hello"), 0644)
+	ctrl := Static(dir)
+	req := Request{Url: "/test.txt", HttpMethod: GET, Version: "HTTP/1.1"}
+
+	// Act
+	res := ctrl(req, Response{})
+
+	// Assert
+	if res.Status != OK {
+		t.Errorf("Expected status OK, got %v", res.Status)
+	}
+	if res.Body != "hello" {
+		t.Errorf("Expected body 'hello', got '%s'", res.Body)
+	}
+	if res.Content != PLAIN {
+		t.Errorf("Expected PLAIN content type, got %v", res.Content)
+	}
+}
+
+// TestStaticReturns404ForMissingFile tests Static controller returns 404
+func TestStaticReturns404ForMissingFile(t *testing.T) {
+	// Arrange
+	dir := t.TempDir()
+	ctrl := Static(dir)
+	req := Request{Url: "/missing.txt", HttpMethod: GET, Version: "HTTP/1.1"}
+
+	// Act
+	res := ctrl(req, Response{})
+
+	// Assert
+	if res.Status != NOT_FOUND {
+		t.Errorf("Expected status NOT_FOUND, got %v", res.Status)
+	}
+}
+
+// TestStaticPreventsDirectoryTraversal tests Static controller blocks path traversal
+func TestStaticPreventsDirectoryTraversal(t *testing.T) {
+	// Arrange
+	dir := t.TempDir()
+	os.WriteFile(dir+"/secret.txt", []byte("secret"), 0644)
+	ctrl := Static(dir)
+	req := Request{Url: "/../secret.txt", HttpMethod: GET, Version: "HTTP/1.1"}
+
+	// Act
+	res := ctrl(req, Response{})
+
+	// Assert
+	if res.Status != FORBIDDEN {
+		t.Errorf("Expected status FORBIDDEN for path traversal, got %v", res.Status)
 	}
 }

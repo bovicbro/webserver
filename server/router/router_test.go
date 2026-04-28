@@ -435,3 +435,74 @@ func TestRouterSpecificRouteSelection(t *testing.T) {
 		})
 	}
 }
+
+// TestRouterWithWildcard tests wildcard route matching
+func TestRouterWithWildcard(t *testing.T) {
+	// Arrange
+	controller := func(req Request, res Response) Response {
+		return Response{Body: "Wildcard", Status: OK, Content: PLAIN}
+	}
+
+	rcs := []ControlledRoutes{
+		{route: Route{Url: "/*", Method: GET}, controller: controller},
+	}
+
+	tests := []URL{"/", "/about", "/styles.css", "/api/v1/users"}
+
+	for _, url := range tests {
+		// Act
+		req := Request{Url: url, HttpMethod: GET, Version: "HTTP/1.1"}
+		res := Router(req, rcs)
+
+		// Assert
+		if res.Body != "Wildcard" {
+			t.Errorf("Expected wildcard match for %v, got %s", url, res.Body)
+		}
+	}
+}
+
+// TestRouterWithPathParams tests path parameter extraction
+func TestRouterWithPathParams(t *testing.T) {
+	// Arrange
+	controller := func(req Request, res Response) Response {
+		return Response{Body: "User: " + req.PathParams["id"], Status: OK, Content: PLAIN}
+	}
+
+	rcs := []ControlledRoutes{
+		{route: Route{Url: "/api/users/:id", Method: GET}, controller: controller},
+	}
+
+	// Act
+	req := Request{Url: "/api/users/42", HttpMethod: GET, Version: "HTTP/1.1"}
+	res := Router(req, rcs)
+
+	// Assert
+	if res.Body != "User: 42" {
+		t.Errorf("Expected 'User: 42', got %s", res.Body)
+	}
+}
+
+// TestRouterWildcardPriority tests that exact routes take priority over wildcards
+func TestRouterWildcardPriority(t *testing.T) {
+	// Arrange
+	exactController := func(req Request, res Response) Response {
+		return Response{Body: "Exact", Status: OK, Content: PLAIN}
+	}
+	wildcardController := func(req Request, res Response) Response {
+		return Response{Body: "Wildcard", Status: OK, Content: PLAIN}
+	}
+
+	rcs := []ControlledRoutes{
+		{route: Route{Url: "/api/users/:id", Method: GET}, controller: exactController},
+		{route: Route{Url: "/*", Method: GET}, controller: wildcardController},
+	}
+
+	// Act
+	req := Request{Url: "/api/users/99", HttpMethod: GET, Version: "HTTP/1.1"}
+	res := Router(req, rcs)
+
+	// Assert
+	if res.Body != "Exact" {
+		t.Errorf("Expected exact route to take priority, got %s", res.Body)
+	}
+}

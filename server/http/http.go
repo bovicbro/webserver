@@ -10,8 +10,8 @@ import (
 type URL string
 
 type Header struct {
-	key   string
-	value string
+	Key   string
+	Value string
 }
 
 type METHOD string
@@ -136,14 +136,21 @@ type Response struct {
 }
 
 func (res Response) Serialize() string {
-	resString := fmt.Sprintf(`HTTP/1.1 %s 
-Content-length: %d 
-Content-Type: %s; charset=utf-8
+	contentType := res.Content
+	if contentType == "" {
+		contentType = HTML
+	}
 
-%s`,
+	var headersBuilder strings.Builder
+	for _, h := range res.Headers {
+		fmt.Fprintf(&headersBuilder, "%s: %s\n", h.Key, h.Value)
+	}
+
+	resString := fmt.Sprintf("HTTP/1.1 %s\nContent-length: %d\nContent-Type: %s; charset=utf-8\n%s\n%s",
 		res.Status,
 		len(res.Body),
-		res.Content,
+		contentType,
+		headersBuilder.String(),
 		res.Body,
 	)
 	return resString
@@ -154,6 +161,9 @@ type Request struct {
 	HttpMethod METHOD
 	Headers    []Header
 	Version    string
+	Query      map[string]string
+	Body       string
+	PathParams map[string]string
 }
 
 type Route struct {
@@ -163,21 +173,74 @@ type Route struct {
 
 func ParseRequest(reqRaw string) (Request, error) {
 	var req = Request{}
-	rows := strings.Split(reqRaw, "\n")
-	if len(rows) < 1 {
+	req.Query = make(map[string]string)
+
+	var headerSection, bodySection string
+	if before, after, ok := strings.Cut(reqRaw, "\r\n\r\n"); ok {
+		headerSection = before
+		bodySection = after
+	} else if before0, after0, ok0 := strings.Cut(reqRaw, "\n\n"); ok0 {
+		headerSection = before0
+		bodySection = after0
+	} else {
+		headerSection = reqRaw
+		bodySection = ""
+	}
+
+	bodySection = strings.TrimRight(bodySection, "\x00")
+	req.Body = bodySection
+
+	rows := strings.Split(headerSection, "\n")
+	if len(rows) < 1 || rows[0] == "" {
 		return req, errors.New("Malformed request")
 	}
-	firstRow := strings.Split(rows[0], " ")
+
+	firstRow := strings.Split(strings.TrimRight(rows[0], "\r"), " ")
 	if len(firstRow) < 3 {
 		return req, errors.New("Malformed request")
 	}
+
 	method := firstRow[0]
-	url := firstRow[1]
+	rawUrl := firstRow[1]
 	version := firstRow[2]
 	req.HttpMethod = METHOD(method)
-	req.Url = URL(url)
 	req.Version = version
+
+	if before, after, ok := strings.Cut(rawUrl, "?"); ok {
+		req.Url = URL(before)
+		parseQueryString(after, req.Query)
+	} else {
+		req.Url = URL(rawUrl)
+	}
+
+	for i := 1; i < len(rows); i++ {
+		line := strings.TrimRight(rows[i], "\r")
+		if line == "" {
+			break
+		}
+		if before, after, ok := strings.Cut(line, ":"); ok {
+			key := strings.TrimSpace(before)
+			value := strings.TrimSpace(after)
+			req.Headers = append(req.Headers, Header{Key: key, Value: value})
+		}
+	}
+
 	return req, nil
+}
+
+func parseQueryString(qs string, out map[string]string) {
+	pairs := strings.Split(qs, "&")
+	for _, pair := range pairs {
+		if pair == "" {
+			continue
+		}
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) == 2 {
+			out[kv[0]] = kv[1]
+		} else if len(kv) == 1 {
+			out[kv[0]] = ""
+		}
+	}
 }
 
 func CreateBaseResponse(req Request) Response {

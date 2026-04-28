@@ -1,0 +1,3 @@
+GET /path?key1=value1&key2=value2&key1=value3 HTTP/1.1
+Host: localhost:8000
+

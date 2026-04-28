@@ -1,0 +1,3 @@
+GET /path?key=val=ue HTTP/1.1
+Host: localhost:8000
+

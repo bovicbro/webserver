@@ -3,7 +3,6 @@ package networking
 import (
 	"log"
 	"net"
-	"os"
 	"webserver/server/http"
 	"webserver/server/router"
 )
@@ -22,46 +21,42 @@ type ListenerType = func(
 	rcs []router.ControlledRoutes)
 
 func Listen(port string, rcs []router.ControlledRoutes) {
-	for {
-		initListener(port, rcs)
-	}
-}
-
-func initListener(port string, rcs []router.ControlledRoutes) {
-	listen, err := net.Listen(TYPE, HOST+":"+port)
-
+	listener, err := net.Listen(TYPE, HOST+":"+port)
 	if err != nil {
-		os.Exit(1)
+		log.Fatalf("Failed to listen on %s:%s: %v", HOST, port, err)
 	}
-
-	defer listen.Close()
+	defer listener.Close()
 
 	for {
-		conn, err := listen.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
+			log.Printf("Accept error: %v", err)
+			continue
 		}
 		go handleRequest(conn, rcs)
 	}
 }
 
 func handleRequest(conn net.Conn, rcs []router.ControlledRoutes) {
-	buffer := make([]byte, 1024)
-	_, err := conn.Read(buffer)
+	defer conn.Close()
 
+	buffer := make([]byte, 4096)
+	n, err := conn.Read(buffer)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Read error: %v", err)
+		return
 	}
 
-	req, err := http.ParseRequest(string(buffer))
+	req, err := http.ParseRequest(string(buffer[:n]))
 	var res http.Response
 	if err != nil {
-		res = http.Response{Status: http.BAD_REQUEST, Body: "400 Bad Request"}
+		res = http.Response{Status: http.BAD_REQUEST, Body: "400 Bad Request", Content: http.PLAIN}
 	} else {
 		res = router.Router(req, rcs)
 	}
 
-	conn.Write([]byte(res.Serialize() + "\n"))
-	conn.Close()
+	_, writeErr := conn.Write([]byte(res.Serialize()))
+	if writeErr != nil {
+		log.Printf("Write error: %v", writeErr)
+	}
 }
