@@ -245,8 +245,8 @@ func TestParseRequestWithSpecialCharacters(t *testing.T) {
 	if req.Url != expectedUrl {
 		t.Errorf("Expected URL %v, got %v", expectedUrl, req.Url)
 	}
-	if req.Query["q"] != "hello%20world" {
-		t.Errorf("Expected query 'q' to be 'hello%%20world', got %v", req.Query["q"])
+	if req.Query["q"] != "hello world" {
+		t.Errorf("Expected query 'q' to be 'hello world', got %v", req.Query["q"])
 	}
 }
 

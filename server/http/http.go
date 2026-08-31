@@ -4,6 +4,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -236,9 +237,12 @@ func parseQueryString(qs string, out map[string]string) {
 		}
 		kv := strings.SplitN(pair, "=", 2)
 		if len(kv) == 2 {
-			out[kv[0]] = kv[1]
+			key, _ := url.QueryUnescape(kv[0])
+			value, _ := url.QueryUnescape(kv[1])
+			out[key] = value
 		} else if len(kv) == 1 {
-			out[kv[0]] = ""
+			key, _ := url.QueryUnescape(kv[0])
+			out[key] = ""
 		}
 	}
 }
